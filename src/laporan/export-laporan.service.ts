@@ -75,7 +75,7 @@ export class ExportLaporanService {
     // --- JUDUL UTAMA (Size 14 & Bold) ---
     sheet.mergeCells('B2:AB2');
     const b2 = sheet.getCell('B2');
-    b2.value = 'DATA SASARAN/KARTU REGISTER BAYI DAN BALITA (0-59 BULAN)';
+    b2.value = 'DATA SASARAN/KARTU REGISTER BAYI DAN BALITA';
     b2.font = { name: 'Calibri', size: 14, bold: true };
     b2.alignment = { horizontal: 'center', vertical: 'middle' };
 
