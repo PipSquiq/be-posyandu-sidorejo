@@ -9,14 +9,22 @@ import {
   Post,
   Query,
   Req,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiProduces,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { AuthUser } from '../common/types/auth-user.type';
+import { ExportLaporanQueryDto } from '../laporan/dto/export-laporan-query.dto';
+import { ExportLaporanService } from '../laporan/export-laporan.service';
 import { CreatePengukuranDto } from './dto/create-pengukuran.dto';
 import { GetEvaluasiQueryDto } from './dto/get-evaluasi-query.dto';
 import { UpdatePengukuranDto } from './dto/update-pengukuran.dto';
@@ -30,7 +38,10 @@ type AuthedRequest = Request & { user: AuthUser };
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'KADER')
 export class PengukuranController {
-  constructor(private readonly pengukuranService: PengukuranService) {}
+  constructor(
+    private readonly pengukuranService: PengukuranService,
+    private readonly exportLaporanService: ExportLaporanService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Input pengukuran (mendukung backdate bulan/tahun)' })
@@ -56,6 +67,34 @@ export class PengukuranController {
     @Query() query: GetEvaluasiQueryDto,
   ) {
     return this.pengukuranService.getEvaluasi(balitaId, query);
+  }
+
+  @Get('export/excel')
+  @ApiOperation({
+    summary: 'Export laporan bayi/balita format ILP Sidorejo Kidul (Excel)',
+  })
+  @ApiProduces(
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
+  async exportExcel(@Query() query: ExportLaporanQueryDto) {
+    const buffer = await this.exportLaporanService.generateExcelBuffer(query);
+    return new StreamableFile(buffer, {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      disposition: `attachment; filename="laporan-balita-${query.tahun}.xlsx"`,
+    });
+  }
+
+  @Get('export/csv')
+  @ApiOperation({
+    summary: 'Export laporan bayi/balita format ILP Sidorejo Kidul (CSV)',
+  })
+  @ApiProduces('text/csv')
+  async exportCsv(@Query() query: ExportLaporanQueryDto) {
+    const buffer = await this.exportLaporanService.generateCsvBuffer(query);
+    return new StreamableFile(buffer, {
+      type: 'text/csv; charset=utf-8',
+      disposition: `attachment; filename="laporan-balita-${query.tahun}.csv"`,
+    });
   }
 
   @Patch(':id')
