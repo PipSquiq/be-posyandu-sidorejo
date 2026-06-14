@@ -4,23 +4,22 @@ FROM node:22-slim
 # 2. Install openssl karena Prisma butuh ini untuk konek ke Neon PostgreSQL
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
-# 3. Buat user non-root khusus untuk Hugging Face (wajib demi keamanan mereka)
-RUN useradd -m -u 1000 user
-USER user
-ENV HOME=/home/user \
-    PATH=/home/user/.local/bin:$PATH
+# 3. Gunakan user 'node' bawaan (UID 1000) yang sudah disediakan oleh image Node
+USER node
+ENV HOME=/home/node \
+    PATH=/home/node/.local/bin:$PATH
 
-# 4. Tentukan folder kerja di dalam server
-WORKDIR /app
+# 4. Tentukan folder kerja di dalam direktori home user node
+WORKDIR /home/node/app
 
 # 5. Copy file package dahulu untuk menginstal dependensi
-COPY --chown=user package*.json ./
+COPY --chown=node package*.json ./
 
-# 6. Install semua dependensi (termasuk devDependencies untuk kebutuhan build)
+# 6. Install semua dependensi
 RUN npm install
 
 # 7. Copy seluruh sisa file project kamu ke dalam server
-COPY --chown=user . .
+COPY --chown=node . .
 
 # 8. Generate Prisma Client agar sinkron dengan database
 RUN npx prisma generate
@@ -32,5 +31,5 @@ RUN npm run build
 ENV PORT=7860
 EXPOSE 7860
 
-# 11. Jalankan aplikasi NestJS menggunakan script start:prod yang sudah kita ubah kemarin
+# 11. Jalankan aplikasi NestJS menggunakan script start:prod
 CMD ["npm", "run", "start:prod"]
