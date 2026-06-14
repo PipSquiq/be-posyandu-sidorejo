@@ -20,7 +20,13 @@ const absensi_module_1 = require("./absensi/absensi.module");
 const laporan_module_1 = require("./laporan/laporan.module");
 const schedule_1 = require("@nestjs/schedule");
 const cron_module_1 = require("./cron/cron.module");
+const logger_middleware_1 = require("./common/middleware/logger.middleware");
 let AppModule = class AppModule {
+    configure(consumer) {
+        consumer
+            .apply(logger_middleware_1.LoggerMiddleware)
+            .forRoutes('*');
+    }
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
