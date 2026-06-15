@@ -35,6 +35,7 @@ export class BalitaService {
         const balita = await tx.balita.create({
           data: {
             nik: dto.nik,
+            noKk: dto.noKk,
             nama: dto.nama,
             jenisKelamin: dto.jenisKelamin,
             tglLahir,

@@ -21,6 +21,11 @@ export class UpdateBalitaDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  noKk?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   nama?: string;
 
   @ApiPropertyOptional({ enum: Gender })
@@ -92,6 +97,6 @@ export class UpdateBalitaDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsInt()
-  @Min(20)
+  @Min(0)
   usiaKehamilan?: number;
 }

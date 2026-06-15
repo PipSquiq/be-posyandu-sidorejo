@@ -306,6 +306,7 @@ export class ExportLaporanService {
         absensis: {
           where: {
             tglHadir: { gte: tahunStart, lt: tahunEnd },
+            isHadir: true,
           },
         },
         pengukurans: {
@@ -332,7 +333,7 @@ export class ExportLaporanService {
         no: index + 1,
         nama: balita.nama,
         nik: balita.nik ?? '',
-        noKk: '',
+        noKk: balita.noKk ?? '',
         rt: `RT ${balita.rt}`,
         namaWali: balita.namaWali,
         nikWali: balita.nikWali ?? '',

@@ -19,6 +19,11 @@ export class CreateBalitaDto {
   @IsString()
   nik?: string;
 
+  @ApiPropertyOptional({ example: '3201010203040002' })
+  @IsOptional()
+  @IsString()
+  noKk?: string;
+
   @ApiProperty({ example: 'Budi' })
   @IsString()
   @IsNotEmpty()
@@ -81,12 +86,12 @@ export class CreateBalitaDto {
   @ApiProperty({ example: 34 })
   @Transform(({ value }) => Number(value))
   @IsNumber()
-  @Min(10)
+  @Min(0)
   lingkarKepalaLahir!: number;
 
   @ApiProperty({ example: 39 })
   @IsInt()
-  @Min(20)
+  @Min(0)
   usiaKehamilan!: number;
 
   @ApiProperty({ example: 6.1, description: 'Berat badan awal (kg)' })
@@ -98,7 +103,7 @@ export class CreateBalitaDto {
   @ApiProperty({ example: 61, description: 'Tinggi/Panjang awal (cm)' })
   @Transform(({ value }) => Number(value))
   @IsNumber()
-  @Min(20)
+  @Min(0)
   tinggiBadanAwal!: number;
 
   @ApiPropertyOptional({ example: 39.5 })
