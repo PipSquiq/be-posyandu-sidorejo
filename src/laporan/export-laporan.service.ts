@@ -45,7 +45,7 @@ type ExportRow = {
   namaWali: string;
   nikWali: string;
   noWhatsapp: string;
-  anakKe: number;
+  anakKe: number | string;
   jenisKelamin: string;
   tglLahir: string;
   beratLahir: number | string;
@@ -334,18 +334,17 @@ export class ExportLaporanService {
         nama: balita.nama,
         nik: balita.nik ?? '',
         noKk: balita.noKk ?? '',
-        rt: `RT ${balita.rt}`,
-        namaWali: balita.namaWali,
+        rt: balita.rt ? `RT ${balita.rt}` : '',
+        namaWali: balita.namaWali ?? '',
         nikWali: balita.nikWali ?? '',
-        noWhatsapp: balita.noWhatsapp,
-        anakKe: balita.anakKe,
+        noWhatsapp: balita.noWhatsapp ?? '',
+        anakKe: balita.anakKe ?? '',
         jenisKelamin: this.mapGender(balita.jenisKelamin),
         tglLahir: this.formatDate(balita.tglLahir),
         beratLahir: balita.beratLahir ?? pengukuranPertama?.beratBadan ?? '',
         panjangLahir: balita.panjangLahir ?? pengukuranPertama?.tinggiBadan ?? '',
-        lingkarKepalaLahir:
-          balita.lingkarKepalaLahir ?? pengukuranPertama?.lingkarKepala ?? '',
-        usiaKehamilan: balita.usiaKehamilan,
+        lingkarKepalaLahir: balita.lingkarKepalaLahir ?? pengukuranPertama?.lingkarKepala ?? '',
+        usiaKehamilan: balita.usiaKehamilan ?? '',
         kunjungan,
       };
     });

@@ -39,24 +39,24 @@ model User {
 
 model Balita {
   id                String   @id @default(uuid())
-  nik               String?  @unique // Optional
+  nik               String?  @unique 
   noKk              String?  
   nama              String
   jenisKelamin      Gender
   tglLahir          DateTime
-  anakKe            Int
-  rt                Int
-  rw                Int
-  namaWali          String   // Required
-  nikWali           String?  // Optional
-  noWhatsapp        String   // Required & Validated di backend
-  alamat            String
+  anakKe            Int?
+  rt                Int?
+  rw                Int?
+  namaWali          String?   
+  nikWali           String?  
+  noWhatsapp        String?  
+  alamat            String?
   
   // Data Lahir & Medis
-  panjangLahir      Float
-  beratLahir        Float
-  lingkarKepalaLahir Float
-  usiaKehamilan     Int      // Dalam minggu
+  panjangLahir      Float?
+  beratLahir        Float?
+  lingkarKepalaLahir Float?
+  usiaKehamilan     Int?     // Dalam minggu
   
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt

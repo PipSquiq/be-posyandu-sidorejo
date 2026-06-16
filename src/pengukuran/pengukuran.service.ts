@@ -14,20 +14,52 @@ export class PengukuranService {
     const balita = await this.prisma.balita.findUnique({ where: { id: dto.balitaId } });
     if (!balita) throw new NotFoundException('Balita tidak ditemukan.');
 
-    this.validateLila(dto.lila, balita.tglLahir, dto.tahun, dto.bulan);
+    // 🛑 VALIDASI 1: Cegah input pengukuran di bulan sebelum lahir
     const tglUkur = tanggalAwalBulan(dto.tahun, dto.bulan);
+    this.validateTanggalUkur(tglUkur, balita.tglLahir, balita.nama);
 
-    return this.prisma.pengukuran.create({
-      data: {
-        balitaId: dto.balitaId,
-        kaderId: user.id,
-        tglUkur,
-        beratBadan: dto.beratBadan,
-        tinggiBadan: dto.tinggiBadan,
-        lingkarKepala: dto.lingkarKepala,
-        lila: dto.lila,
-        catatan: dto.catatan,
-      },
+    this.validateLila(dto.lila, balita.tglLahir, dto.tahun, dto.bulan);
+
+    const endUkur = tanggalAkhirBulan(dto.tahun, dto.bulan);
+
+    // ⚡ Menggunakan Transaction agar simpan pengukuran & update absensi berjalan bersamaan
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Jalankan proses otomatisasi absensi: set isHadir menjadi true
+      const existingAbsen = await tx.absensi.findFirst({
+        where: {
+          balitaId: dto.balitaId,
+          tglHadir: { gte: tglUkur, lt: endUkur },
+        },
+      });
+
+      if (existingAbsen) {
+        await tx.absensi.update({
+          where: { id: existingAbsen.id },
+          data: { isHadir: true },
+        });
+      } else {
+        await tx.absensi.create({
+          data: {
+            balitaId: dto.balitaId,
+            isHadir: true,
+            tglHadir: tglUkur,
+          },
+        });
+      }
+
+      // 2. Buat data pengukuran baru
+      return tx.pengukuran.create({
+        data: {
+          balitaId: dto.balitaId,
+          kaderId: user.id,
+          tglUkur,
+          beratBadan: dto.beratBadan,
+          tinggiBadan: dto.tinggiBadan,
+          lingkarKepala: dto.lingkarKepala,
+          lila: dto.lila,
+          catatan: dto.catatan,
+        },
+      });
     });
   }
 
@@ -53,20 +85,53 @@ export class PengukuranService {
 
     const tahun = dto.tahun ?? existing.tglUkur.getFullYear();
     const bulan = dto.bulan ?? existing.tglUkur.getMonth() + 1;
+    
+    // 🛑 VALIDASI 2: Jaga-jaga jika saat edit data, kadernya mengubah tahun/bulan ke sebelum lahir
+    const tglUkurBaru = tanggalAwalBulan(tahun, bulan);
+    this.validateTanggalUkur(tglUkurBaru, existing.balita.tglLahir, existing.balita.nama);
+
     const lila = dto.lila ?? existing.lila ?? undefined;
     this.validateLila(lila, existing.balita.tglLahir, tahun, bulan);
 
-    return this.prisma.pengukuran.update({
-      where: { id },
-      data: {
-        tglUkur: dto.tahun || dto.bulan ? tanggalAwalBulan(tahun, bulan) : undefined,
-        beratBadan: dto.beratBadan,
-        tinggiBadan: dto.tinggiBadan,
-        lingkarKepala: dto.lingkarKepala,
-        lila: dto.lila,
-        catatan: dto.catatan,
-        kaderId: user.id,
-      },
+    const endUkurBaru = tanggalAkhirBulan(tahun, bulan);
+
+    return this.prisma.$transaction(async (tx) => {
+      // Jaga-jaga jika kader memindahkan bulan/tahun pengukuran saat edit, 
+      // pastikan absensi di bulan tujuan tersebut ikut ter-update menjadi hadir.
+      const existingAbsen = await tx.absensi.findFirst({
+        where: {
+          balitaId: existing.balitaId,
+          tglHadir: { gte: tglUkurBaru, lt: endUkurBaru },
+        },
+      });
+
+      if (existingAbsen) {
+        await tx.absensi.update({
+          where: { id: existingAbsen.id },
+          data: { isHadir: true },
+        });
+      } else {
+        await tx.absensi.create({
+          data: {
+            balitaId: existing.balitaId,
+            isHadir: true,
+            tglHadir: tglUkurBaru,
+          },
+        });
+      }
+
+      return tx.pengukuran.update({
+        where: { id },
+        data: {
+          tglUkur: dto.tahun || dto.bulan ? tglUkurBaru : undefined,
+          beratBadan: dto.beratBadan,
+          tinggiBadan: dto.tinggiBadan,
+          lingkarKepala: dto.lingkarKepala,
+          lila: dto.lila,
+          catatan: dto.catatan,
+          kaderId: user.id,
+        },
+      });
     });
   }
 
@@ -136,6 +201,7 @@ export class PengukuranService {
     item: {
       beratBadan: number;
       tinggiBadan: number;
+      include_null_handling?: any;
       lingkarKepala: number | null;
       lila: number | null;
     },
@@ -190,7 +256,7 @@ export class PengukuranService {
     const lonjakanBerat3Bulan = bulan3.beratBadan - bulan1.beratBadan;
     const lonjakanTinggi3Bulan = bulan3.tinggiBadan - bulan1.tinggiBadan;
 
-    return `Berdasarkan 3 bulan data terakhir, ${trenBerat} dan ${trenTinggi}. Dalam periode 3 bulan, perubahan total berat ${lonjakanBerat3Bulan.toFixed(2)} kg dan tinggi/panjang ${lonjakanTinggi3Bulan.toFixed(2)} cm. Silakan lanjutkan pemantauan rutin setiap bulan untuk evaluasi pertumbuhan yang lebih akurat.`;
+    return `Berdasarkan 3 bulan data terakhir, ${trenBerat} and ${trenTinggi}. Dalam periode 3 bulan, perubahan total berat ${lonjakanBerat3Bulan.toFixed(2)} kg dan tinggi/panjang ${lonjakanTinggi3Bulan.toFixed(2)} cm. Silakan lanjutkan pemantauan rutin setiap bulan untuk evaluasi pertumbuhan yang lebih akurat.`;
   }
 
   private validateLila(
@@ -203,6 +269,20 @@ export class PengukuranService {
     const usiaBulan = hitungUsiaBulan(tglLahir, tanggalAwalBulan(tahun, bulan));
     if (usiaBulan <= 6) {
       throw new BadRequestException('LILA tidak boleh diisi untuk usia 6 bulan ke bawah.');
+    }
+  }
+
+  private validateTanggalUkur(tglUkur: Date, tglLahir: Date, namaBalita: string) {
+    const startLahir = new Date(tglLahir.getFullYear(), tglLahir.getMonth(), 1);
+    
+    if (tglUkur < startLahir) {
+      const formattedLahir = tglLahir.toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'long',
+      });
+      throw new BadRequestException(
+        `Gagal! Pengukuran tidak boleh dilakukan sebelum bulan lahir balita. ${namaBalita} baru lahir pada bulan ${formattedLahir}.`,
+      );
     }
   }
 }

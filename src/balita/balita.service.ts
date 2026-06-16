@@ -118,7 +118,7 @@ export class BalitaService {
         data: {
           namaBalita: balita.nama,
           nikBalita: balita.nik,
-          namaWali: balita.namaWali,
+          namaWali: balita.namaWali ?? '',
           alasan: dto.alasan,
           catatan: dto.catatan,
         },
@@ -137,7 +137,7 @@ export class BalitaService {
         data: target.map((balita) => ({
           namaBalita: balita.nama,
           nikBalita: balita.nik,
-          namaWali: balita.namaWali,
+          namaWali: balita.namaWali ?? '',
           alasan: AlasanHapus.OTOMATIS_SISTEM,
           catatan: 'Arsip otomatis karena usia lebih dari 60 bulan.',
         })),

@@ -9,6 +9,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Length,
   Matches,
   Min,
 } from 'class-validator';
@@ -17,6 +18,7 @@ export class CreateBalitaDto {
   @ApiPropertyOptional({ example: '3201010203040001' })
   @IsOptional()
   @IsString()
+  @Length(16, 16, { message: 'NIK harus tepat 16 digit' })
   nik?: string;
 
   @ApiPropertyOptional({ example: '3201010203040002' })
@@ -37,65 +39,75 @@ export class CreateBalitaDto {
   @IsDateString()
   tglLahir!: string;
 
-  @ApiProperty({ example: 1 })
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
   @IsInt()
   @Min(1)
-  anakKe!: number;
+  anakKe?: number;
 
-  @ApiProperty({ example: 1 })
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
   @IsInt()
   @Min(0)
-  rt!: number;
+  rt?: number;
 
-  @ApiProperty({ example: 2 })
+  @ApiPropertyOptional({ example: 2 })
+  @IsOptional()
   @IsInt()
   @Min(0)
-  rw!: number;
+  rw?: number;
 
-  @ApiProperty({ example: 'Ibu Ani' })
+  @ApiPropertyOptional({ example: 'Ibu Ani' }) // 👈 Diubah ke ApiPropertyOptional
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  namaWali!: string;
+  namaWali?: string;
 
   @ApiPropertyOptional({ example: '3201010101010002' })
   @IsOptional()
   @IsString()
+  @Length(16, 16, { message: 'NIK wali harus tepat 16 digit' })
   nikWali?: string;
 
-  @ApiProperty({ example: '081234567890' })
-  @Matches(/^(08|62|\+62)[0-9]{9,13}$/)
-  noWhatsapp!: string;
+  @ApiPropertyOptional({ example: '081234567890' })
+  @IsOptional()
+  @Matches(/^(08|62|\+62)[0-9]{9,13}$/, { message: 'Format nomor WhatsApp tidak valid' })
+  noWhatsapp?: string;
 
-  @ApiProperty({ example: 'Jl. Merdeka No. 1' })
+  @ApiPropertyOptional({ example: 'Jl. Merdeka No. 1' }) // 👈 Diubah ke ApiPropertyOptional
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  alamat!: string;
+  alamat?: string;
 
-  @ApiProperty({ example: 49.5 })
-  @Transform(({ value }) => Number(value))
+  @ApiPropertyOptional({ example: 49.5 })
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value)) // 👈 Transform duluan di paling atas
+  @IsOptional()
   @IsNumber()
   @Min(1)
-  panjangLahir!: number;
+  panjangLahir?: number;
 
-  @ApiProperty({ example: 3.2 })
-  @Transform(({ value }) => Number(value))
+  @ApiPropertyOptional({ example: 3.2 })
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  @IsOptional()
   @IsNumber()
   @Min(0.5)
-  beratLahir!: number;
+  beratLahir?: number;
 
-  @ApiProperty({ example: 34 })
-  @Transform(({ value }) => Number(value))
+  @ApiPropertyOptional({ example: 34 })
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value)) // 👈 FIX COMPLAIN LINGKAR KEPALA
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  lingkarKepalaLahir!: number;
+  lingkarKepalaLahir?: number;
 
-  @ApiProperty({ example: 39 })
+  @ApiPropertyOptional({ example: 39 })
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  @IsOptional()
   @IsInt()
   @Min(0)
-  usiaKehamilan!: number;
+  usiaKehamilan?: number;
 
   @ApiProperty({ example: 6.1, description: 'Berat badan awal (kg)' })
-  @Transform(({ value }) => Number(value))
+  @Transform(({ value }) => Number(value)) // 👈 Memastikan form-data terganti jadi number
   @IsNumber()
   @Min(0.5)
   beratBadanAwal!: number;
@@ -107,14 +119,14 @@ export class CreateBalitaDto {
   tinggiBadanAwal!: number;
 
   @ApiPropertyOptional({ example: 39.5 })
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
   @IsOptional()
-  @Transform(({ value }) => Number(value))
   @IsNumber()
   lingkarKepalaAwal?: number;
 
   @ApiPropertyOptional({ example: 12.8 })
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
   @IsOptional()
-  @Transform(({ value }) => Number(value))
   @IsNumber()
   lilaAwal?: number;
 
