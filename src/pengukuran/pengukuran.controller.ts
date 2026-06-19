@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -105,5 +106,11 @@ export class PengukuranController {
     @Req() req: AuthedRequest,
   ) {
     return this.pengukuranService.update(id, dto, req.user);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Hapus data pengukuran posyandu' })
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.pengukuranService.remove(id);
   }
 }

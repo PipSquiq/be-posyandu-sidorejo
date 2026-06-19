@@ -85,7 +85,16 @@ export class BalitaService {
   }
 
   async findOne(id: string) {
-    const balita = await this.prisma.balita.findUnique({ where: { id } });
+    const balita = await this.prisma.balita.findUnique({ 
+      where: { id },
+      include: {
+        pengukurans: {
+          orderBy: {
+            tglUkur: 'asc', 
+          },
+        },
+      },
+    });
     if (!balita) throw new NotFoundException('Balita tidak ditemukan.');
     return {
       ...balita,
@@ -101,6 +110,13 @@ export class BalitaService {
         data: {
           ...dto,
           tglLahir: dto.tglLahir ? new Date(dto.tglLahir) : undefined,
+        },
+        include: {
+          pengukurans: {
+            orderBy: {
+              tglUkur: 'asc',
+            },
+          },
         },
       });
     } catch (e) {

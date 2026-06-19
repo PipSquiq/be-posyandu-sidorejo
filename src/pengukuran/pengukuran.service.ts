@@ -14,7 +14,6 @@ export class PengukuranService {
     const balita = await this.prisma.balita.findUnique({ where: { id: dto.balitaId } });
     if (!balita) throw new NotFoundException('Balita tidak ditemukan.');
 
-    // 🛑 VALIDASI 1: Cegah input pengukuran di bulan sebelum lahir
     const tglUkur = tanggalAwalBulan(dto.tahun, dto.bulan);
     this.validateTanggalUkur(tglUkur, balita.tglLahir, balita.nama);
 
@@ -22,9 +21,20 @@ export class PengukuranService {
 
     const endUkur = tanggalAkhirBulan(dto.tahun, dto.bulan);
 
-    // ⚡ Menggunakan Transaction agar simpan pengukuran & update absensi berjalan bersamaan
     return this.prisma.$transaction(async (tx) => {
-      // 1. Jalankan proses otomatisasi absensi: set isHadir menjadi true
+      const duplicatePengukuran = await tx.pengukuran.findFirst({
+        where: {
+          balitaId: dto.balitaId,
+          tglUkur: { gte: tglUkur, lt: endUkur },
+        },
+      });
+
+      if (duplicatePengukuran) {
+        throw new BadRequestException(
+          `Gagal! Data pengukuran untuk ${balita.nama} pada bulan dan tahun tersebut sudah terisi. Gunakan menu edit jika ingin mengubah data.`,
+        );
+      }
+
       const existingAbsen = await tx.absensi.findFirst({
         where: {
           balitaId: dto.balitaId,
@@ -47,7 +57,6 @@ export class PengukuranService {
         });
       }
 
-      // 2. Buat data pengukuran baru
       return tx.pengukuran.create({
         data: {
           balitaId: dto.balitaId,
@@ -86,7 +95,6 @@ export class PengukuranService {
     const tahun = dto.tahun ?? existing.tglUkur.getFullYear();
     const bulan = dto.bulan ?? existing.tglUkur.getMonth() + 1;
     
-    // 🛑 VALIDASI 2: Jaga-jaga jika saat edit data, kadernya mengubah tahun/bulan ke sebelum lahir
     const tglUkurBaru = tanggalAwalBulan(tahun, bulan);
     this.validateTanggalUkur(tglUkurBaru, existing.balita.tglLahir, existing.balita.nama);
 
@@ -96,8 +104,7 @@ export class PengukuranService {
     const endUkurBaru = tanggalAkhirBulan(tahun, bulan);
 
     return this.prisma.$transaction(async (tx) => {
-      // Jaga-jaga jika kader memindahkan bulan/tahun pengukuran saat edit, 
-      // pastikan absensi di bulan tujuan tersebut ikut ter-update menjadi hadir.
+      
       const existingAbsen = await tx.absensi.findFirst({
         where: {
           balitaId: existing.balitaId,
@@ -132,6 +139,48 @@ export class PengukuranService {
           kaderId: user.id,
         },
       });
+    });
+  }
+
+  async remove(id: string) {
+    const existing = await this.prisma.pengukuran.findUnique({
+      where: { id },
+    });
+    if (!existing) throw new NotFoundException('Data pengukuran tidak ditemukan.');
+
+    const startBulan = new Date(existing.tglUkur.getFullYear(), existing.tglUkur.getMonth(), 1);
+    const endBulan = new Date(existing.tglUkur.getFullYear(), existing.tglUkur.getMonth() + 1, 1);
+
+    return this.prisma.$transaction(async (tx) => {
+      
+      await tx.pengukuran.delete({ where: { id } });
+
+      
+      const sisaPengukuran = await tx.pengukuran.findFirst({
+        where: {
+          balitaId: existing.balitaId,
+          tglUkur: { gte: startBulan, lt: endBulan },
+        },
+      });
+
+      
+      if (!sisaPengukuran) {
+        const absenBulanIni = await tx.absensi.findFirst({
+          where: {
+            balitaId: existing.balitaId,
+            tglHadir: { gte: startBulan, lt: endBulan },
+          },
+        });
+
+        if (absenBulanIni) {
+          await tx.absensi.update({
+            where: { id: absenBulanIni.id },
+            data: { isHadir: false }, 
+          });
+        }
+      }
+
+      return { message: 'Data pengukuran berhasil dihapus dan absensi telah diselaraskan.' };
     });
   }
 
