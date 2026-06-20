@@ -46,14 +46,56 @@ export class AbsensiService {
   async findByMonth(tahun: number, bulan: number, isHadir?: boolean) {
     const start = tanggalAwalBulan(tahun, bulan);
     const end = tanggalAkhirBulan(tahun, bulan);
-    return this.prisma.absensi.findMany({
-      where: {
-        tglHadir: { gte: start, lt: end },
-        isHadir: isHadir === undefined ? undefined : isHadir,
+
+    const balitas = await this.prisma.balita.findMany({
+      include: {
+        absensis: {
+          where: {
+            tglHadir: { gte: start, lt: end },
+          },
+        },
       },
-      include: { balita: true },
-      orderBy: [{ isHadir: 'desc' }, { balita: { nama: 'asc' } }],
+      orderBy: { nama: 'asc' },
     });
+
+    const result = balitas.map((balita) => {
+      const absensiRecord = balita.absensis[0]; 
+      
+      return {
+        id: absensiRecord?.id ?? `virtual-${balita.id}`,
+        tglHadir: absensiRecord?.tglHadir ?? start,
+        isHadir: absensiRecord?.isHadir ?? false,
+        keterangan: absensiRecord?.keterangan ?? null,
+        balitaId: balita.id,
+        balita: {
+          id: balita.id,
+          nik: balita.nik,
+          noKk: balita.noKk,
+          nama: balita.nama,
+          jenisKelamin: balita.jenisKelamin,
+          tglLahir: balita.tglLahir,
+          anakKe: balita.anakKe,
+          rt: balita.rt,
+          rw: balita.rw,
+          namaWali: balita.namaWali,
+          nikWali: balita.nikWali,
+          noWhatsapp: balita.noWhatsapp,
+          alamat: balita.alamat,
+          panjangLahir: balita.panjangLahir,
+          beratLahir: balita.beratLahir,
+          lingkarKepalaLahir: balita.lingkarKepalaLahir,
+          usiaKehamilan: balita.usiaKehamilan,
+          createdAt: balita.createdAt,
+          updatedAt: balita.updatedAt,
+        },
+      };
+    });
+
+    if (isHadir !== undefined) {
+      return result.filter((item) => item.isHadir === isHadir);
+    }
+
+    return result.sort((a, b) => Number(b.isHadir) - Number(a.isHadir));
   }
 
   async seedMonthlyDefault(tahun: number, bulan: number) {

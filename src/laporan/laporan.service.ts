@@ -9,13 +9,24 @@ export class LaporanService {
   async getLaporan(bulan: number, tahun: number) {
     const start = tanggalAwalBulan(tahun, bulan);
     const end = tanggalAkhirBulan(tahun, bulan);
-    const [totalBalitaAktif, hadir, tidakHadir] = await Promise.all([
+    
+    const [totalBalitaAktif, hadir] = await Promise.all([
       this.prisma.balita.count(),
-      this.prisma.absensi.count({ where: { tglHadir: { gte: start, lt: end }, isHadir: true } }),
-      this.prisma.absensi.count({ where: { tglHadir: { gte: start, lt: end }, isHadir: false } }),
+      this.prisma.absensi.count({ 
+        where: { 
+          tglHadir: { gte: start, lt: end }, 
+          isHadir: true 
+        } 
+      }),
     ]);
 
-    return { totalBalitaAktif, jumlahHadir: hadir, jumlahTidakHadir: tidakHadir };
+    const tidakHadir = totalBalitaAktif - hadir;
+
+    return { 
+      totalBalitaAktif, 
+      jumlahHadir: hadir, 
+      jumlahTidakHadir: tidakHadir 
+    };
   }
 
   async getBeranda() {
