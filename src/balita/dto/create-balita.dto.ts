@@ -106,17 +106,19 @@ export class CreateBalitaDto {
   @Min(0)
   usiaKehamilan?: number;
 
-  @ApiProperty({ example: 6.1, description: 'Berat badan awal (kg)' })
-  @Transform(({ value }) => Number(value)) // 👈 Memastikan form-data terganti jadi number
-  @IsNumber()
-  @Min(0.5)
-  beratBadanAwal!: number;
-
-  @ApiProperty({ example: 61, description: 'Tinggi/Panjang awal (cm)' })
-  @Transform(({ value }) => Number(value))
+  @ApiPropertyOptional({ example: 6.1, description: 'Berat badan awal (kg)' })
+  @Transform(({ value }) => (value === '' || value === null || value === undefined ? undefined : Number(value))) 
+  @IsOptional() 
   @IsNumber()
   @Min(0)
-  tinggiBadanAwal!: number;
+  beratBadanAwal?: number;
+
+  @ApiPropertyOptional({ example: 61, description: 'Tinggi/Panjang awal (cm)' })
+  @Transform(({ value }) => (value === '' || value === null || value === undefined ? undefined : Number(value)))
+  @IsOptional() 
+  @IsNumber()
+  @Min(0)
+  tinggiBadanAwal?: number;
 
   @ApiPropertyOptional({ example: 39.5 })
   @Transform(({ value }) => (value === '' || value === null ? undefined : value))

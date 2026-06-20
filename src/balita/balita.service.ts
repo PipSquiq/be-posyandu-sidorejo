@@ -58,11 +58,11 @@ export class BalitaService {
             balitaId: balita.id,
             kaderId: user.id,
             tglUkur,
-            beratBadan: dto.beratBadanAwal,
-            tinggiBadan: dto.tinggiBadanAwal,
+            beratBadan: dto.beratBadanAwal ?? 0,
+            tinggiBadan: dto.tinggiBadanAwal ?? 0,
             lingkarKepala: dto.lingkarKepalaAwal,
             lila: dto.lilaAwal,
-            catatan: dto.catatanAwal,
+            catatan: dto.catatanAwal ?? 'Pengukuran otomatis pendaftaran pertama',
           },
         });
 
