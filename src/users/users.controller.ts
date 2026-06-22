@@ -24,32 +24,47 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
 @ApiTags('users')
-@ApiBearerAuth()
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Post('register')
+  @ApiOperation({ summary: 'Pendaftaran mandiri untuk Kader (Terbuka Umum)' })
+  register(@Body() dto: CreateUserDto) {
+    return this.usersService.registerKader(dto);
+  }
+
   @Post()
-  @ApiOperation({ summary: 'Buat akun kader (hanya admin)' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Buat akun kader dari dashboard (Hanya Admin)' })
   create(@Body() dto: CreateUserDto) {
     return this.usersService.create(dto);
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Daftar kader' })
   findAll() {
     return this.usersService.findAll();
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Detail kader' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.findOne(id);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Perbarui kader' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -60,6 +75,9 @@ export class UsersController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Hapus kader' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.remove(id);

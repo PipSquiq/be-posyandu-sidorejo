@@ -16,6 +16,10 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async registerKader(dto: CreateUserDto) {
+    return this.create(dto);
+  }
+
   async create(dto: CreateUserDto) {
     const hashed = await bcrypt.hash(dto.password, 10);
     try {
